@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Tajuk HTML dikemas kini -->
+    <title>Cabaran Tartil Ayat Al-Baqarah (6-10)</title>
+    <!-- Muat Naik Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Muat Naik Font Lateef dan Scheherazade New dari Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Lateef&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Tetapan asas untuk kad ayat */
+        .ayat-card {
+            cursor: grab;
+            user-select: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            /* Pastikan kad responsif sepenuhnya */
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .ayat-card:active {
+            cursor: grabbing;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+            transform: scale(1.02);
+            z-index: 10; /* Pastikan kad yang ditarik berada di atas */
+        }
+
+        /* Gaya untuk menunjukkan kad boleh diletakkan */
+        .drag-over {
+            border: 4px dashed #000; /* Tukar sempadan drag kepada hitam pada latar cerah */
+            opacity: 0.7;
+        }
+        
+        /* Gaya RTL untuk teks Arab */
+        .arabic-text {
+            direction: rtl;
+            text-align: right;
+            /* FONT LATEEF ditetapkan sebagai pilihan utama */
+            font-family: 'Lateef', 'Scheherazade New', serif; 
+            font-weight: 400; 
+            /* JARAK BARIS BARU: Ditetapkan kepada 3.5x saiz fon untuk jarak yang luas dan tiada pertindihan */
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: normal; 
+        }
+
+        /* Gaya untuk butang Play/Stop */
+        .play-button {
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .play-button:hover {
+            transform: scale(1.05);
+        }
+        .play-button.playing {
+            background-color: #ef4444; /* Warna Merah untuk Stop */
+        }
+        .play-button.playing:hover {
+             background-color: #dc2626;
+        }
+    </style>
+</head>
+<body class="bg-violet-200 min-h-screen p-4 sm:p-8 font-sans">
+
+    <div class="max-w-5xl mx-auto">
+        <header class="text-center mb-8">
+            <!-- LOGO MIZZ - Latar belakang lutsinar dikekalkan -->
+            <img src="https://raw.githubusercontent.com/mizz85/nota-sifir/main/logo-mizz%20(2).png" 
+                 alt="Logo Mizz" 
+                 class="mx-auto h-28 w-auto mb-6" 
+                 onerror="this.onerror=null;this.src='https://placehold.co/112x112/10b981/ffffff?text=Logo+Gagal';">
+            
+            <!-- TAJUK UTAMA KINI SATU BARIS DAN BERPUSAT SAHAJA -->
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-teal-700 mb-4">
+                CABARAN TARTIL AYAT
+            </h1>
+            <!-- SUBTAJUK "BARIS ATAS" TELAH DIHILANGKAN -->
+
+            <p class="text-xl text-gray-800">Surah Al-Baqarah (Ayat 6-10) - Berserta Terjemahan Per Kata</p>
+            <p class="mt-4 p-3 bg-yellow-400/50 text-yellow-800 rounded-lg text-sm sm:text-base font-semibold">
+                Tarik dan lepaskan (Drag & Drop) kad-kad di bawah untuk menyusunnya mengikut urutan yang betul!
+            </p>
+        </header>
+
+        <!-- Container untuk Kad Ayat -->
+        <div id="ayat-container" class="space-y-4 mb-8">
+            <!-- Kad-kad Ayat akan dimuatkan di sini oleh JavaScript -->
+        </div>
+
+        <!-- Butang Semak dan Mesej Maklum Balas -->
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+            <button id="check-button" onclick="checkOrder()" class="w-full sm:w-auto px-8 py-3 bg-green-600 text-white font-bold rounded-xl shadow-lg hover:bg-green-700 transition duration-300 transform hover:scale-105">
+                Semak Jawapan
+            </button>
+            <!-- BUTANG BARU: Tunjuk Jawapan -->
+            <button id="show-answer-button" onclick="showAnswer()" class="w-full sm:w-auto px-8 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition duration-300 transform hover:scale-105">
+                Tunjuk Jawapan
+            </button>
+            <button id="reset-button" onclick="initBoard(true)" class="w-full sm:w-auto px-8 py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition duration-300 transform hover:scale-105">
+                Susun Semula
+            </button>
+        </div>
+
+        <div id="feedback-message" class="mt-6 p-4 text-center rounded-xl font-extrabold text-2xl" style="min-height: 70px;">
+            <!-- Mesej maklum balas akan dipaparkan di sini -->
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // Data Ayat Al-Baqarah (Ayat 6-10) - Disimpan dalam susunan yang BETUL.
+        // URL audio menggunakan tilawah Syeikh Mishary Rashid Alafasy (Qari ID 7)
+        const correctAyat = [
+            {
+                id: 6,
+                arabic: "إِنَّ ٱلَّذِينَ كَفَرُوا سَوَآءٌ عَلَيْهِمْ ءَأَنذَرْتَهُمْ أَمْ لَمْ تُنذِرْهُمْ لَا يُؤْمِنُونَ",
+                malay: "Sesungguhnya orang-orang kafir (yang tidak mahu menerima kebenaran), sama sahaja kepada mereka: sama ada engkau beri amaran kepada mereka atau engkau tidak beri amaran, mereka tidak akan beriman.",
+                english: "Indeed, those who disbelieve - it is all the same for them whether you warn them or do not warn them - they will not believe.",
+                color: "bg-orange-600",
+                audioUrl: "https://cdn.islamic.network/quran/audio/128/mishari_rashid_alafasy/2/6.mp3",
+                wordByWord: [
+                    { arabic: "إِنَّ", transliteration: "inna", meaning: "Sesungguhnya" },
+                    { arabic: "ٱلَّذِينَ", transliteration: "alladhīna", meaning: "orang-orang yang" },
+                    { arabic: "كَفَرُوا", transliteration: "kafarū", meaning: "mereka kafir" },
+                    { arabic: "سَوَآءٌ", transliteration: "sawāon", meaning: "sama sahaja" },
+                    { arabic: "عَلَيْهِمْ", transliteration: "ʿalayhim", meaning: "ke atas mereka" },
+                    { arabic: "ءَأَنذَرْتَهُمْ", transliteration: "a-anzartahum", meaning: "sama ada engkau beri amaran kepada mereka" },
+                    { arabic: "أَمْ", transliteration: "am", meaning: "atau" },
+                    { arabic: "لَمْ", transliteration: "lam", meaning: "tidak" },
+                    { arabic: "تُنذِرْهُمْ", transliteration: "tundhirhum", meaning: "engkau beri amaran kepada mereka" },
+                    { arabic: "لَا", transliteration: "lā", meaning: "tidak" },
+                    { arabic: "يُؤْمِنُونَ", transliteration: "yu'minūna", meaning: "mereka beriman" }
+                ]
+            },
+            {
+                id: 7,
+                arabic: "خَتَمَ ٱللَّهُ عَلَىٰ قُلُوبِهِمْ وَعَلَىٰ سَمْعِهِمْ ۖ وَعَلَىٰٓ أَبْصَٰرِهِمْ غِشَٰوَةٌ ۖ وَلَهُمْ عَذَابٌ عَظِيمٌ",
+                malay: "Allah telah mematerikan atas hati mereka dan atas pendengaran mereka, dan di atas penglihatan mereka ada penutup, dan bagi mereka azab yang besar.",
+                english: "Allah has set a seal upon their hearts and upon their hearing, and over their vision is a veil. And for them is a great punishment.",
+                color: "bg-pink-700",
+                audioUrl: "https://cdn.islamic.network/quran/audio/128/mishari_rashid_alafasy/2/7.mp3",
+                wordByWord: [
+                    { arabic: "خَتَمَ", transliteration: "khatama", meaning: "Dia telah mematerikan" },
+                    { arabic: "ٱللَّهُ", transliteration: "allahu", meaning: "Allah" },
+                    { arabic: "عَلَىٰ", transliteration: "ʿalā", meaning: "atas" },
+                    { arabic: "قُلُوبِهِمْ", transliteration: "qulūbihim", meaning: "hati mereka" },
+                    { arabic: "وَعَلَىٰ", transliteration: "wa-ʿalā", meaning: "dan atas" },
+                    { arabic: "سَمْعِهِمْ", transliteration: "samʿihim", meaning: "pendengaran mereka" },
+                    { arabic: "وَعَلَىٰٓ", transliteration: "wa-ʿalā", meaning: "dan atas" },
+                    { arabic: "أَبْصَٰرِهِمْ", transliteration: "abṣārihim", meaning: "penglihatan mereka" },
+                    { arabic: "غِشَٰوَةٌ", transliteration: "ghishāwatun", meaning: "penutup" },
+                    { arabic: "وَلَهُمْ", transliteration: "walahum", meaning: "dan bagi mereka" },
+                    { arabic: "عَذَابٌ", transliteration: "ʿadhābun", meaning: "azab" },
+                    { arabic: "عَظِيمٌ", transliteration: "ʿaẓīmun", meaning: "besar" }
+                ]
+            },
+            {
+                id: 8,
+                arabic: "وَمِنَ ٱلنَّاسِ مَن يَقُولُ ءَامَنَّا بِٱللَّهِ وَبِٱلْيَوْمِ ٱلْءَاخِرِ وَمَا هُم بِمُؤْمِنِينَ",
+                malay: "Dan di antara manusia ada yang berkata: \"Kami telah beriman kepada Allah dan kepada hari akhirat\"; padahal mereka sebenarnya tidak beriman.",
+                english: "And of the people are some who say, \"We believe in Allah and the Last Day,\" but they are not believers.",
+                color: "bg-indigo-600",
+                audioUrl: "https://cdn.islamic.network/quran/audio/128/mishari_rashid_alafasy/2/8.mp3",
+                wordByWord: [
+                    { arabic: "وَمِنَ", transliteration: "wamina", meaning: "Dan di antara" },
+                    { arabic: "ٱلنَّاسِ", transliteration: "al-nāsi", meaning: "manusia" },
+                    { arabic: "مَن", transliteration: "man", meaning: "sesiapa yang" },
+                    { arabic: "يَقُولُ", transliteration: "yaqūlu", meaning: "berkata" },
+                    { arabic: "ءَامَنَّا", transliteration: "āmannā", meaning: "Kami telah beriman" },
+                    { arabic: "بِٱللَّهِ", transliteration: "bi-allahi", meaning: "kepada Allah" },
+                    { arabic: "وَبِٱلْيَوْمِ", transliteration: "wabil-yawmi", meaning: "dan kepada hari" },
+                    { arabic: "ٱلْءَاخِرِ", transliteration: "al-ākhiri", meaning: "akhirat" },
+                    { arabic: "وَمَا", transliteration: "wamā", meaning: "padahal tidak" },
+                    { arabic: "هُم", transliteration: "hum", meaning: "mereka" },
+                    { arabic: "بِمُؤْمِنِينَ", transliteration: "bimu'minīna", meaning: "orang-orang yang beriman" }
+                ]
+            },
+            {
+                id: 9,
+                arabic: "يُخَٰدِعُونَ ٱللَّهَ وَٱلَّذِينَ ءَامَنُوا وَمَا يَخْدَعُونَ إِلَّآ أَنفُسَهُمْ وَمَا يَشْعُرُونَ",
+                malay: "Mereka hendak menipu Allah dan orang-orang yang beriman, padahal mereka hanyalah menipu diri sendiri, sedang mereka tidak menyedarinya.",
+                english: "They [think to] deceive Allah and those who believe, but they deceive not except themselves and perceive [it] not.",
+                color: "bg-teal-800",
+                audioUrl: "https://cdn.islamic.network/quran/audio/128/mishari_rashid_alafasy/2/9.mp3",
+                wordByWord: [
+                    { arabic: "يُخَٰدِعُونَ", transliteration: "yukhādiʿūna", meaning: "Mereka menipu" },
+                    { arabic: "ٱللَّهَ", transliteration: "allaha", meaning: "Allah" },
+                    { arabic: "وَٱلَّذِينَ", transliteration: "wa-alladhīna", meaning: "dan orang-orang yang" },
+                    { arabic: "ءَامَنُوا", transliteration: "āmanū", meaning: "beriman" },
+                    { arabic: "وَمَا", transliteration: "wamā", meaning: "dan tidak" },
+                    { arabic: "يَخْدَعُونَ", transliteration: "yakhdaʿūna", meaning: "mereka menipu" },
+                    { arabic: "إِلَّآ", transliteration: "illā", meaning: "kecuali" },
+                    { arabic: "أَنفُسَهُمْ", transliteration: "anfusahum", meaning: "diri mereka sendiri" },
+                    { arabic: "وَمَا", transliteration: "wamā", meaning: "dan tidak" },
+                    { arabic: "يَشْعُرُونَ", transliteration: "yashʿurūna", meaning: "mereka sedar" }
+                ]
+            },
+            {
+                id: 10,
+                arabic: "فِى قُلُوبِهِم مَّرَضٌ فَزَادَهُمُ ٱللَّهُ مَرَضًا ۖ وَلَهُمْ عَذَابٌ أَلِيمٌۢ بِمَا كَانُوا يَكْذِبُونَ",
+                malay: "Dalam hati mereka (golongan munafik) terdapat penyakit (syak dan hasad dengki), maka Allah tambah lagi penyakit itu, dan bagi mereka azab yang pedih, dengan sebab mereka berdusta.",
+                english: "In their hearts is a sickness, and Allah has increased their sickness; and for them is a painful punishment because they used to lie.",
+                color: "bg-lime-700",
+                audioUrl: "https://cdn.islamic.network/quran/audio/128/mishari_rashid_alafasy/2/10.mp3",
+                wordByWord: [
+                    { arabic: "فِى", transliteration: "fī", meaning: "Dalam" },
+                    { arabic: "قُلُوبِهِم", transliteration: "qulūbihim", meaning: "hati mereka" },
+                    { arabic: "مَّرَضٌ", transliteration: "maraḍun", meaning: "penyakit" },
+                    { arabic: "فَزَادَهُمُ", transliteration: "fazādahumu", meaning: "maka Allah menambah mereka" },
+                    { arabic: "ٱللَّهُ", transliteration: "allahu", meaning: "Allah" },
+                    { arabic: "مَرَضًا", transliteration: "maraḍan", meaning: "penyakit" },
+                    { arabic: "وَلَهُمْ", transliteration: "walahum", meaning: "dan bagi mereka" },
+                    { arabic: "عَذَابٌ", transliteration: "ʿadhābun", meaning: "azab" },
+                    { arabic: "أَلِيمٌۢ", transliteration: "alīmun", meaning: "yang pedih" },
+                    { arabic: "بِمَا", transliteration: "bimā", meaning: "disebabkan apa yang" },
+                    { arabic: "كَانُوا", transliteration: "kānū", meaning: "mereka selalu" },
+                    { arabic: "يَكْذِبُونَ", transliteration: "yakdhibūna", meaning: "mereka berdusta" }
+                ]
+            }
+        ];
+
+        let draggedItem = null;
+        const container = document.getElementById('ayat-container');
+        const feedbackMessage = document.getElementById('feedback-message');
+        
+        // Global State for UI Control
+        let isAnswerShown = false;
+        let isGameFinished = false; // To disable Check button after correct answer
+        
+        // Inisialisasi Audio Context
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let currentAudio = null; // Menjejaki audio yang sedang dimainkan
+        let currentButton = null; // Menjejaki butang audio yang sedang aktif
+
+        /**
+         * Fungsi untuk menghentikan semua audio yang sedang dimainkan.
+         */
+        function stopAllAudio() {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+            if (currentButton) {
+                currentButton.classList.remove('playing');
+                currentButton.innerHTML = getPlayIcon(); // Tukar ikon kepada Play
+            }
+            currentAudio = null;
+            currentButton = null;
+        }
+
+        /**
+         * Fungsi untuk menjana ikon Play (SVG).
+         */
+        function getPlayIcon() {
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path fill-rule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 20.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clip-rule="evenodd" />
+                    </svg>`;
+        }
+
+        /**
+         * Fungsi untuk menjana ikon Stop (SVG).
+         */
+        function getStopIcon() {
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path fill-rule="evenodd" d="M4.5 7.5a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3h-15Z" clip-rule="evenodd" />
+                    </svg>`;
+        }
+
+
+        /**
+         * Fungsi untuk menjana bunyi maklum balas.
+         * @param {boolean} isCorrect - Benar untuk bunyi betul (nada tinggi, chime), Salah untuk bunyi salah (nada rendah, thud).
+         */
+        function playFeedbackSound(isCorrect) {
+            if (!audioContext) return;
+
+            const now = audioContext.currentTime;
+
+            if (isCorrect) {
+                // Bunyi BETUL: Arpeggio menaik (C5, E5, G5, C6) - "Chime"
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                let delay = 0;
+                
+                notes.forEach(frequency => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+
+                    osc.type = 'sine'; // Nada yang lembut
+                    osc.frequency.setValueAtTime(frequency, now + delay);
+                    
+                    // Attack
+                    gain.gain.setValueAtTime(0, now + delay);
+                    gain.gain.linearRampToValueAtTime(0.3, now + delay + 0.01);
+                    
+                    // Release
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.15);
+
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    
+                    osc.start(now + delay);
+                    osc.stop(now + delay + 0.15);
+
+                    delay += 0.08; // Selang antara not yang lebih cepat
+                });
+            } else {
+                // Bunyi SALAH: Bunyi "thud" pendek (low-frequency square wave with quick decay)
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.type = 'square'; // Bunyi yang lebih tajam
+                oscillator.frequency.setValueAtTime(150, now); // Nada rendah (150 Hz)
+                
+                // Envelope
+                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.linearRampToValueAtTime(0.2, now + 0.01); // Quick attack
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2); // Fast decay
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.start(now);
+                oscillator.stop(now + 0.2); // Sangat pendek
+            }
+        }
+
+        /**
+         * Fungsi untuk mengacaukan (shuffle) susunan ayat.
+         * @param {Array} array - Array ayat.
+         * @returns {Array} - Array ayat yang telah diacau.
+         */
+        function shuffleArray(array) {
+            // Kita buat salinan untuk elak ubah array asal
+            const shuffled = [...array]; 
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // Tukar posisi
+            }
+            return shuffled;
+        }
+
+        /**
+         * Fungsi untuk memulakan papan susunan ayat.
+         * @param {boolean} isReset - Benar jika dipanggil dari butang reset.
+         */
+        function initBoard(isReset = false) {
+            stopAllAudio(); // Hentikan sebarang audio yang sedang dimainkan
+            container.innerHTML = '';
+            feedbackMessage.innerHTML = '';
+            
+            // RESET GLOBAL STATE DAN KAWALAN BUTTON
+            isAnswerShown = false;
+            isGameFinished = false;
+            document.getElementById('check-button').disabled = false;
+            document.getElementById('show-answer-button').disabled = false;
+            document.getElementById('check-button').classList.remove('opacity-50', 'cursor-not-allowed');
+            document.getElementById('show-answer-button').classList.remove('opacity-50', 'cursor-not-allowed');
+
+            // Gunakan tetapan asas untuk latar cerah
+            feedbackMessage.className = 'mt-6 p-4 text-center rounded-xl font-extrabold text-2xl';
+
+            const shuffledAyat = shuffleArray(correctAyat);
+            
+            if (isReset) {
+                feedbackMessage.textContent = 'Susunan telah dikacau! Susun semula ayat-ayat ini.';
+                // Warna maklum balas untuk latar cerah
+                feedbackMessage.classList.add('bg-yellow-300', 'text-yellow-800');
+            }
+
+            shuffledAyat.forEach(ayat => {
+                const card = document.createElement('div');
+                card.id = `ayat-${ayat.id}`;
+                card.setAttribute('data-id', ayat.id);
+                card.setAttribute('draggable', 'true'); // Pastikan kad boleh ditarik
+                
+                // Card styling
+                card.className = `ayat-card ${ayat.color} text-white p-4 sm:p-6 rounded-xl shadow-xl select-none`;
+
+                // --- HEADER: Butang Audio dan ID Ayat ---
+                const header = document.createElement('div');
+                header.className = "flex justify-between items-center mb-4 border-b border-white/50 pb-3";
+
+                // Butang Play/Stop Audio
+                const audioButton = document.createElement('button');
+                audioButton.id = `audio-btn-${ayat.id}`;
+                audioButton.className = "play-button bg-teal-500 text-white p-2 rounded-full shadow-lg hover:bg-teal-400 focus:outline-none flex items-center justify-center";
+                audioButton.innerHTML = getPlayIcon(); // Ikon Play
+
+                // Elemen Audio (Tersembunyi)
+                const audio = document.createElement('audio');
+                audio.id = `audio-${ayat.id}`;
+                audio.src = ayat.audioUrl;
+                audio.setAttribute('preload', 'auto');
+                
+                // Event listener untuk butang audio
+                audioButton.onclick = (e) => {
+                    e.stopPropagation(); // Elak event drag
+                    toggleAudio(audio.id, audioButton.id);
+                };
+
+                // Event listener apabila audio tamat (end)
+                audio.onended = () => {
+                    audioButton.classList.remove('playing');
+                    audioButton.innerHTML = getPlayIcon();
+                    currentAudio = null;
+                    currentButton = null;
+                };
+
+                // Nombor Ayat - KINI DISEMBUNYIKAN SECARA LALAI
+                const ayatNumber = document.createElement('span');
+                ayatNumber.id = `ayat-num-${ayat.id}`; 
+                // Tambah kelas 'hidden' untuk menyembunyikan nombor ayat
+                ayatNumber.className = "text-xl sm:text-2xl font-extrabold bg-white/10 px-4 py-1 rounded-full text-white hidden"; 
+                ayatNumber.textContent = `Ayat ${ayat.id}`;
+
+                header.appendChild(audioButton);
+                header.appendChild(ayatNumber); // Keep it appended, just hidden
+                card.appendChild(header);
+
+                // Tambah elemen audio tersembunyi
+                card.appendChild(audio);
+                // --- END HEADER ---
+
+
+                // 1. Teks Arab
+                const arabic = document.createElement('p');
+                // Saiz fon Arab kekal besar: text-3xl sm:text-4xl
+                arabic.className = "text-3xl sm:text-4xl font-medium arabic-text mb-4"; 
+                arabic.innerHTML = ayat.arabic; 
+                card.appendChild(arabic);
+
+                // 2. Terjemahan Per Kata (Word by Word)
+                const wbwContainer = document.createElement('div');
+                wbwContainer.className = "mt-4 pt-4 border-t border-white/30";
+                
+                // Title - Gunakan flex untuk buat butang tutup/buka (toggle)
+                const wbwHeader = document.createElement('div');
+                wbwHeader.className = "flex justify-between items-center cursor-pointer mb-3";
+                wbwHeader.onclick = (e) => {
+                    // Elak event drag dari card
+                    e.stopPropagation(); 
+                    const grid = wbwContainer.querySelector('.wbw-grid');
+                    const icon = wbwHeader.querySelector('svg');
+                    grid.classList.toggle('hidden');
+                    icon.classList.toggle('rotate-180');
+                };
+
+                const wbwTitle = document.createElement('h4');
+                wbwTitle.className = "text-sm sm:text-xl font-extrabold text-teal-300";
+                wbwTitle.textContent = "Terjemahan Per Kata (Word by Word)";
+                
+                // Icon Arrow (SVG)
+                const arrowIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                arrowIcon.setAttribute("viewBox", "0 0 20 20");
+                arrowIcon.setAttribute("fill", "currentColor");
+                arrowIcon.className = "w-6 h-6 text-teal-300 transition-transform duration-300";
+                arrowIcon.innerHTML = '<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />';
+                
+                wbwHeader.appendChild(wbwTitle);
+                wbwHeader.appendChild(arrowIcon);
+                wbwContainer.appendChild(wbwHeader);
+
+                // Grid for words
+                const wbwGrid = document.createElement('div');
+                wbwGrid.className = "wbw-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 hidden"; // Sembunyikan secara lalai untuk mobile
+                
+                ayat.wordByWord.forEach(word => {
+                    const wordCard = document.createElement('div');
+                    wordCard.className = "p-2 sm:p-3 bg-white/10 rounded-lg text-xs sm:text-sm text-center shadow-inner break-words";
+                    
+                    // Arabic
+                    const wbwArabic = document.createElement('p');
+                    wbwArabic.className = "arabic-text text-lg sm:text-xl font-bold text-yellow-300";
+                    wbwArabic.textContent = word.arabic;
+                    
+                    // Transliteration
+                    const wbwTrans = document.createElement('p');
+                    wbwTrans.className = "text-white/80 italic my-0.5 sm:my-1 text-[10px] sm:text-xs";
+                    wbwTrans.textContent = word.transliteration;
+
+                    // Meaning
+                    const wbwMeaning = document.createElement('p');
+                    wbwMeaning.className = "text-teal-200 font-semibold text-xs sm:text-sm";
+                    wbwMeaning.textContent = word.meaning;
+
+                    wordCard.appendChild(wbwArabic);
+                    wordCard.appendChild(wbwTrans);
+                    wordCard.appendChild(wbwMeaning);
+                    wbwGrid.appendChild(wordCard);
+                });
+
+                wbwContainer.appendChild(wbwGrid);
+                card.appendChild(wbwContainer);
+                
+                // 3. Terjemahan Bahasa Melayu (Penuh)
+                const malay = document.createElement('p');
+                malay.className = "text-sm sm:text-lg font-semibold text-white/90 pt-2 border-t border-white/50 mt-4";
+                malay.innerHTML = `<span class="font-extrabold text-white">Bahasa Melayu (Penuh):</span> ${ayat.malay}`;
+                card.appendChild(malay);
+
+                // 4. Terjemahan Bahasa Inggeris (Penuh)
+                const english = document.createElement('p');
+                english.className = "text-xs sm:text-base italic text-white/70 mt-2";
+                english.innerHTML = `<span class="font-extrabold text-white">English (Full):</span> ${ayat.english}`;
+                card.appendChild(english);
+                
+                // Tambah event listeners
+                card.addEventListener('dragstart', handleDragStart);
+                card.addEventListener('dragover', handleDragOver);
+                card.addEventListener('dragleave', handleDragLeave);
+                card.addEventListener('drop', handleDrop);
+                card.addEventListener('dragend', handleDragEnd);
+
+                container.appendChild(card);
+            });
+        }
+
+        /**
+         * Helper function to reveal the Ayat ID on all cards.
+         */
+        function showAyatNumbers() {
+            document.querySelectorAll('.ayat-card').forEach(card => {
+                const ayatId = card.getAttribute('data-id');
+                const ayatNumSpan = card.querySelector(`#ayat-num-${ayatId}`);
+                if (ayatNumSpan) {
+                     ayatNumSpan.classList.remove('hidden');
+                }
+            });
+        }
+        
+        /**
+         * Fungsi untuk menukar susunan kad ke urutan yang betul 
+         * dan mendedahkan nombor Ayat pada semua kad.
+         */
+        function showAnswer() {
+            if (isAnswerShown) return;
+            isAnswerShown = true;
+            
+            // 1. Dapatkan semua kad dalam DOM
+            const cardElements = Array.from(container.children);
+            
+            // Urutan yang betul sepatutnya [6, 7, 8, 9, 10]
+            // Susun elemen HTML berdasarkan data-id
+            const sortedCards = cardElements.sort((a, b) => {
+                const idA = parseInt(a.getAttribute('data-id'));
+                const idB = parseInt(b.getAttribute('data-id'));
+                return idA - idB;
+            });
+
+            // Re-append dalam urutan yang betul (memindahkan elemen sedia ada)
+            sortedCards.forEach(card => container.appendChild(card));
+            
+            // 2. Dedahkan Nombor Ayat pada semua kad
+            showAyatNumbers();
+
+            // 3. Kemas kini mesej maklum balas dan lumpuhkan kawalan
+            playFeedbackSound(true); // Mainkan bunyi betul
+            feedbackMessage.className = 'mt-6 p-4 text-center rounded-xl font-extrabold text-2xl bg-blue-300 text-blue-800 transition duration-500';
+            feedbackMessage.textContent = 'Ini adalah susunan Ayat yang BETUL (Ayat 6 hingga 10). Susun Semula untuk mencuba lagi!';
+
+            // Jadikan kad tidak boleh ditarik
+            document.querySelectorAll('.ayat-card').forEach(card => {
+                card.setAttribute('draggable', 'false');
+                card.style.cursor = 'default';
+            });
+            
+            // Lumpuhkan butang yang berkaitan
+            document.getElementById('check-button').disabled = true;
+            document.getElementById('show-answer-button').disabled = true;
+            document.getElementById('check-button').classList.add('opacity-50', 'cursor-not-allowed');
+            document.getElementById('show-answer-button').classList.add('opacity-50', 'cursor-not-allowed');
+
+        }
+
+        // --- Fungsi Kawalan Audio ---
+
+        function toggleAudio(audioId, buttonId) {
+            const audio = document.getElementById(audioId);
+            const button = document.getElementById(buttonId);
+
+            if (currentAudio === audio) {
+                // Jika audio yang sama sedang dimainkan, hentikan
+                stopAllAudio();
+            } else {
+                // Hentikan audio lain
+                stopAllAudio();
+                
+                // Mulakan audio baru
+                currentAudio = audio;
+                currentButton = button;
+                
+                audio.play().then(() => {
+                    button.classList.add('playing');
+                    button.innerHTML = getStopIcon(); // Tukar ikon kepada Stop
+                }).catch(error => {
+                    // Handle error, e.g., browser prevents autoplay
+                    console.error("Gagal memainkan audio:", error);
+                    // Gunakan mesej maklum balas ringkas di console atau UI, bukan alert()
+                    stopAllAudio();
+                });
+            }
+        }
+
+
+        // --- Fungsi Drag and Drop (Kekal sama) ---
+
+        function handleDragStart(e) {
+            // Elakkan drag jika jawapan sudah ditunjukkan atau permainan selesai
+            if (isAnswerShown || isGameFinished) {
+                e.preventDefault();
+                return;
+            }
+            e.target.style.opacity = '0.4';
+            draggedItem = e.target;
+            // Hentikan audio semasa menggerakkan kad
+            stopAllAudio(); 
+            // Menyimpan ID kad yang ditarik
+            e.dataTransfer.setData('text/plain', e.target.getAttribute('data-id'));
+        }
+
+        function handleDragEnd(e) {
+            e.target.style.opacity = '1';
+            // Bersihkan gaya drag-over dari semua kad
+            document.querySelectorAll('.ayat-card').forEach(item => {
+                item.classList.remove('drag-over');
+            });
+            draggedItem = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault(); // Membenarkan drop
+            // Pastikan sasaran adalah elemen yang berbeza
+            const dropTarget = e.target.closest('.ayat-card');
+            if (dropTarget && dropTarget !== draggedItem && !isAnswerShown && !isGameFinished) {
+                // Gunakan e.target.closest('.ayat-card') untuk mendapatkan kad induk yang betul
+                dropTarget.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            // Hapus kelas drag-over dari kad yang ditinggalkan
+            const dropTarget = e.target.closest('.ayat-card');
+            if (dropTarget) {
+                dropTarget.classList.remove('drag-over');
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            
+            // Dapatkan kad sasaran sebenar (parent card)
+            const dropTarget = e.target.closest('.ayat-card');
+
+            // Bersihkan gaya drag-over
+            if (dropTarget) {
+                dropTarget.classList.remove('drag-over');
+            }
+
+            if (draggedItem && dropTarget && dropTarget !== draggedItem && !isAnswerShown && !isGameFinished) {
+                // Cari kedudukan kad yang hendak digantikan
+                const dropTargetIndex = Array.from(container.children).indexOf(dropTarget);
+                
+                // Cari kedudukan kad yang ditarik
+                const draggedIndex = Array.from(container.children).indexOf(draggedItem);
+
+                // Logik untuk menukar kedudukan:
+                if (draggedIndex > dropTargetIndex) {
+                    // Letakkan kad yang ditarik sebelum sasaran
+                    container.insertBefore(draggedItem, dropTarget);
+                } else {
+                    // Letakkan kad yang ditarik selepas sasaran
+                    container.insertBefore(draggedItem, dropTarget.nextSibling);
+                }
+            }
+        }
+
+        // --- Fungsi Semak Jawapan ---
+
+        function checkOrder() {
+            if (isGameFinished || isAnswerShown) return; // Jangan benarkan semakan jika sudah selesai
+            
+            stopAllAudio(); // Hentikan audio sebelum semakan
+            // Ambil ID dari setiap kad dalam susunan semasa
+            const currentOrder = Array.from(container.children).map(card => parseInt(card.getAttribute('data-id')));
+            
+            // Urutan yang betul sepatutnya [6, 7, 8, 9, 10]
+            const correctOrder = correctAyat.map(ayat => ayat.id);
+
+            // Semak sama ada urutan semasa adalah sama dengan urutan yang betul
+            const isCorrect = currentOrder.every((id, index) => id === correctOrder[index]);
+
+            // Mainkan bunyi maklum balas
+            playFeedbackSound(isCorrect);
+
+            feedbackMessage.className = 'mt-6 p-4 text-center rounded-xl font-extrabold text-2xl transition duration-500';
+
+            if (isCorrect) {
+                feedbackMessage.textContent = 'TAHNIAH! Susunan Ayat Anda BETUL! Hebat!';
+                // Gunakan warna hijau cerah untuk maklum balas BETUL (bg-300, text-800)
+                feedbackMessage.classList.remove('bg-red-300', 'text-red-800', 'bg-yellow-300', 'text-yellow-800');
+                feedbackMessage.classList.add('bg-green-300', 'text-green-800');
+                
+                // Tetapkan state selesai dan tunjukkan nombor ayat
+                isGameFinished = true;
+                showAyatNumbers(); 
+                
+                // Lumpuhkan butang selepas jawapan betul
+                document.getElementById('check-button').disabled = true;
+                document.getElementById('show-answer-button').disabled = true;
+                document.getElementById('check-button').classList.add('opacity-50', 'cursor-not-allowed');
+                document.getElementById('show-answer-button').classList.add('opacity-50', 'cursor-not-allowed');
+                
+                 // Jadikan kad tidak boleh ditarik
+                document.querySelectorAll('.ayat-card').forEach(card => {
+                    card.setAttribute('draggable', 'false');
+                    card.style.cursor = 'default';
+                });
+            } else {
+                feedbackMessage.textContent = 'Cuba lagi! Susunan Ayat Anda BELUM BETUL. Jangan putus asa!';
+                // Gunakan warna merah cerah untuk maklum balas SALAH (bg-300, text-800)
+                feedbackMessage.classList.remove('bg-green-300', 'text-green-800', 'bg-yellow-300', 'text-yellow-800');
+                feedbackMessage.classList.add('bg-red-300', 'text-red-800');
+            }
+        }
+
+        // Mulakan papan susunan ayat apabila tetingkap dimuatkan
+        window.onload = () => initBoard();
+    </script>
+</body>
+</html>
+
