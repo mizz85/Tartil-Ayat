@@ -235,7 +235,8 @@
         const LOCAL_STORAGE_KEY = 'mizz_ayat_memorization_2_6_10';
         let memorizedState = {}; // Global state untuk status hafalan { "6": true, "7": false, ... }
         
-        // Inisialisasi Audio Context
+        // Inisialisasi Audio Context (untuk bunyi maklum balas)
+        // PENTING: Initialization AudioContext mesti berlaku di luar mana-mana fungsi event listener yang tidak diklik.
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         let currentAudio = null; // Menjejaki audio yang sedang dimainkan
         let currentButton = null; // Menjejaki butang audio yang sedang aktif
@@ -360,7 +361,10 @@
         function stopAllAudio() {
             if (currentAudio) {
                 currentAudio.pause();
-                currentAudio.currentTime = 0;
+                // Reset current time to zero if it's not the same audio, to allow replay from start
+                if (!currentAudio.paused && currentAudio.currentTime > 0) {
+                     currentAudio.currentTime = 0;
+                }
             }
             if (currentButton) {
                 currentButton.classList.remove('playing');
@@ -388,13 +392,70 @@
                     </svg>`;
         }
 
+        /**
+         * Fungsi untuk menukar status main balik audio.
+         * [KEMAS KINI] Menambah logik untuk resume AudioContext (untuk membantu Chrome).
+         */
+        function toggleAudio(audioId, buttonId) {
+            const audio = document.getElementById(audioId);
+            const button = document.getElementById(buttonId);
+
+            if (currentAudio === audio) {
+                stopAllAudio();
+                return;
+            }
+            
+            stopAllAudio();
+            currentAudio = audio;
+            currentButton = button;
+
+            // Pastikan audio dimainkan dari mula
+            audio.currentTime = 0;
+
+            // ** KEMAS KINI KRITIKAL UNTUK CHROME/BROWSER KETAT **
+            // Cuba resume AudioContext (digunakan untuk bunyi maklum balas) semasa interaksi klik.
+            // Ini kadang-kadang membantu "memujuk" pelayar untuk membenarkan <audio> tag dimainkan.
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    console.log('AudioContext resumed successfully on user gesture.');
+                }).catch(e => {
+                    console.error('Failed to resume AudioContext:', e);
+                });
+            }
+
+            // Cuba mainkan audio. Gunakan promise untuk menguruskan kejayaan atau kegagalan main balik.
+            const playPromise = audio.play();
+
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    // Berjaya dimainkan
+                    button.classList.add('playing');
+                    button.innerHTML = getStopIcon(); 
+                }).catch(error => {
+                    // Gagal mainkan (Autoplay blocked atau ralat rangkaian)
+                    console.error("Gagal memainkan audio:", error);
+                    stopAllAudio();
+                    // Maklum balas yang lebih jelas kepada pengguna
+                    flashFeedback('RALAT: Main balik disekat oleh pelayar (Autoplay Policy). Sila cuba Muat Semula atau pastikan sambungan stabil.', 'bg-red-700 text-white', 4000);
+                });
+            } else {
+                // Fallback jika audio.play() tidak mengembalikan promise (jarang berlaku)
+                flashFeedback('RALAT: Fungsi main balik audio tidak disokong.', 'bg-red-600 text-white', 3000);
+                stopAllAudio();
+            }
+        }
+
 
         /**
          * Fungsi untuk menjana bunyi maklum balas.
          * @param {boolean} isCorrect - Benar untuk bunyi betul (nada tinggi, chime), Salah untuk bunyi salah (nada rendah, thud).
          */
         function playFeedbackSound(isCorrect) {
-            if (!audioContext) return;
+            // Periksa sama ada AudioContext telah diaktifkan
+            if (!audioContext || audioContext.state === 'suspended') {
+                console.warn('AudioContext belum diaktifkan oleh interaksi pengguna.');
+                return;
+            }
 
             const now = audioContext.currentTime;
 
@@ -699,27 +760,56 @@
             document.getElementById('show-answer-button').classList.add('opacity-50', 'cursor-not-allowed');
         }
 
-        // --- Fungsi Kawalan Audio ---
+
+        // --- Fungsi Kawalan Audio (KEMAS KINI FOKUS) ---
 
         function toggleAudio(audioId, buttonId) {
             const audio = document.getElementById(audioId);
             const button = document.getElementById(buttonId);
 
             if (currentAudio === audio) {
+                // Audio yang sama sedang dimainkan, hentikan
                 stopAllAudio();
-            } else {
-                stopAllAudio();
-                
-                currentAudio = audio;
-                currentButton = button;
-                
-                audio.play().then(() => {
+                return;
+            }
+            
+            // Hentikan sebarang audio lain yang sedang dimainkan
+            stopAllAudio();
+            currentAudio = audio;
+            currentButton = button;
+
+            // Pastikan audio dimainkan dari mula
+            audio.currentTime = 0;
+
+            // ** KEMAS KINI KRITIKAL UNTUK CHROME/BROWSER KETAT **
+            // Cuba resume AudioContext (digunakan untuk bunyi maklum balas) semasa interaksi klik.
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    console.log('AudioContext resumed successfully on user gesture.');
+                }).catch(e => {
+                    console.error('Failed to resume AudioContext:', e);
+                });
+            }
+
+            // Cuba mainkan audio. Gunakan promise untuk menguruskan kejayaan atau kegagalan main balik.
+            const playPromise = audio.play();
+
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    // Berjaya dimainkan
                     button.classList.add('playing');
                     button.innerHTML = getStopIcon(); 
                 }).catch(error => {
+                    // Gagal mainkan (Autoplay blocked atau ralat rangkaian)
                     console.error("Gagal memainkan audio:", error);
                     stopAllAudio();
+                    // Maklum balas yang lebih jelas kepada pengguna
+                    flashFeedback('RALAT AUDIO (Disekat Pelayar): Sila cuba Muat Semula atau pastikan sambungan stabil. Butang Play MESTI diaktifkan oleh interaksi pengguna.', 'bg-red-700 text-white', 4000);
                 });
+            } else {
+                // Fallback jika audio.play() tidak mengembalikan promise (jarang berlaku)
+                flashFeedback('RALAT: Fungsi main balik audio tidak disokong.', 'bg-red-600 text-white', 3000);
+                stopAllAudio();
             }
         }
 
